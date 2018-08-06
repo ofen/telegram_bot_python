@@ -19,7 +19,7 @@ def logging(msg):
 
 bot.set_update_listener(logging)
 
-@bot.massage_handler(command=['/start'])
+@bot.message_handler(command=['/start'])
 def init(msg):
     bot.send_message(msg.chat.id, 'Initialization!')
     time.wait(10)
