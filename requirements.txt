@@ -1,8 +1,7 @@
-certifi==2018.4.16
+certifi==2018.8.24
 chardet==3.0.4
+future==0.16.0
 idna==2.7
-PySocks==1.6.8
-pyTelegramBotAPI==3.6.3
+python-telegram-bot==10.1.0
 requests==2.19.1
-six==1.11.0
 urllib3==1.23
