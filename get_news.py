@@ -22,20 +22,20 @@ keywords = [
     'управляющия',
     'жилищн',
 ]
-
+# Filtering string by keywords
 def keywords_filter(str):
     filter = re.compile('|'.join(keywords), flags=re.IGNORECASE)
     if re.search(filter, str):
         return True
     else:
         return False
-
+# Getting feed
 def get_feed():
     rss = urllib.request.urlopen('https://www.fontanka.ru/fontanka.rss').read().decode('cp1251')
     for key, value in replace.items():
         rss = rss.replace(key, value)
     return rss
-
+# Process data
 def get():
     data = list()
     rss = get_feed()

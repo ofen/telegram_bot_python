@@ -1,19 +1,16 @@
-'''
-Генерирует
-'''
-
-import requests
-
 import os
 import re
 import json
 from urllib.parse import urlencode
+from app import logger
 
-# получаем список счетчиков для опроса
+import requests
+
+# Getting device list from file
 with open('device_list.txt', 'r') as file:
     device_list = file.read().splitlines()
 
-# заголовки для запросов
+# Request headers
 headers = {
     'Host':'lk.vodokanal.spb.ru',
     'Connection':'keep-alive',
@@ -21,24 +18,24 @@ headers = {
     'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36',
     'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8',
 }
-# создаем клиент с поддержкой сессий
+# Session client
 client = requests.Session()
 
-# Авторизация
+# Credentials
+credentials = {
+    'login': os.getenv('VODOKANAL_LOGIN'),
+    'password': os.getenv('VODOKANAL_PASSWD'),
+}
+
+# Authorization
 def auth():
-    print('Авторизация')
-    credentials = {
-        'login': 'gks2kir@yandex.ru',
-        'password': 'P2z$Ih0;b',
-    }
     return client.post(
         url='https://lk.vodokanal.spb.ru/login',
         data=credentials
     )
 
-# Получаем информацию по всем доступным счетчикам
+# Getting info about devices
 def get_device_info():
-    print('Сбор данных')
     payload = {
         'api_version': '2',
         'jsonData': json.dumps({
@@ -62,21 +59,21 @@ def get_device_info():
         device_placecode.update({device: placecode})
     return device_placecode
 
-# перебираем список счетчиком
+# Process data
 def get(current_date):
-    print('Собираем отчет на %s' % current_date)
+    logger.info('Geeting report on %s' % current_date)
     auth()
     device_placecode = get_device_info()
     collected_data = []
     progress = 20
     for index, device in enumerate(device_list, start=1):
         if (index * 100 / len(device_list)) // progress == 1:
-            print('Отчет завершен на %s%%' % progress)
+            logger.info('Report complete at %s%%' % progress)
             progress += 20
-        # если похоже на номер то обрабатываем либо пропускаем
+        # If device number is valid then process
         if re.match(r'\d+\.\d+|\d+', device):
             placecode = device_placecode.get(device)
-            # если нет placecode то нет устройства
+            # If device number has no placecode then no such device
             if placecode is None:
                 collected_data.append('NO DEVICE')
             else:
@@ -88,14 +85,14 @@ def get(current_date):
                         'dstop': current_date,
                     })
                 }
-                # получаем показания
+                # Requesting data
                 res = client.post(
                     url='https://lk.vodokanal.spb.ru/devices/getHourlyReadings/ajax',
                     headers=headers,
                     data=urlencode(payload)
                 )
                 result = res.json()
-                # проверяем есть ли показания
+                # Checking data
                 try:
                     value = result['data'][0]['value'].replace('.', ',')
                     collected_data.append(value)
@@ -103,5 +100,5 @@ def get(current_date):
                     collected_data.append('NO DATA')
         else:
             collected_data.append(device)
-    print('Отчет готов')
+    logger.info('Report ready')
     return collected_data
